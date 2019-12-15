@@ -2,7 +2,7 @@ using Toybox.WatchUi as Ui;
 using Toybox.System as Sys;
 using Toybox.Communications as Comm;
 
-class MessagesPngInputDelegate extends Ui.BehaviorDelegate {
+class UnquestionifyInputDelegate extends Ui.BehaviorDelegate {
     hidden var view;
 
     function initialize(v) {

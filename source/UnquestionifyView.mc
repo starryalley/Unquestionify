@@ -3,7 +3,7 @@ using Toybox.Graphics as Gfx;
 using Toybox.Communications as Comm;
 using Toybox.System as Sys;
 
-class MessagesPngView extends Ui.View {
+class UnquestionifyView extends Ui.View {
     hidden var screenShape;
     hidden var screenWidth;
     hidden var screenHeight;
@@ -12,10 +12,7 @@ class MessagesPngView extends Ui.View {
     hidden var currentNotifications = []; //as array of string
     hidden var currentNotificationIndex = 0;
 
-    //hidden const ip = "10.42.100.49"; //for office test
-    hidden const ip = "192.168.1.104"; //for home test
-    //hidden const ip = "192.168.1.100";//for home test - ada
-    //hiddne const ip = "127.0.0.1";
+    hidden const ip = "127.0.0.1";
 
     hidden const appId = "c569ccc1-be51-4860-bbcd-2b45a138d64b";
     hidden var initialised = false;
@@ -161,7 +158,7 @@ class MessagesPngView extends Ui.View {
         } else {
             // show current/total notification count in overview page
             dc.setColor(Gfx.COLOR_LT_GRAY, Gfx.COLOR_TRANSPARENT);
-            dc.drawText(dc.getWidth()/2, 8, Gfx.FONT_XTINY, "Messages", Gfx.TEXT_JUSTIFY_CENTER);
+            dc.drawText(dc.getWidth()/2, 8, Gfx.FONT_XTINY, "Unquestionify", Gfx.TEXT_JUSTIFY_CENTER);
             dc.drawText(dc.getWidth()/2, dc.getHeight() - 20, Gfx.FONT_XTINY, 
                 (currentNotificationIndex + 1) + "/"+ currentNotifications.size(), Gfx.TEXT_JUSTIFY_CENTER);
         }

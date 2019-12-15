@@ -2,7 +2,7 @@ using Toybox.Application as App;
 using Toybox.System as Sys;
 using Toybox.Timer as Timer;
 
-class MessagesPng extends App.AppBase {
+class Unquestionify extends App.AppBase {
     // we poll phone app to know if we have new notification (only when app is running obviously)
     // since it is not reliable for phone to send message to watch in CIQ
     hidden const POLL_PERIOD = 3 * 1000; //ms
@@ -11,7 +11,7 @@ class MessagesPng extends App.AppBase {
 
     function initialize() {
         App.AppBase.initialize();
-        view = new MessagesPngView();
+        view = new UnquestionifyView();
     }
 
     function onStart(state) {
@@ -25,7 +25,7 @@ class MessagesPng extends App.AppBase {
     }
 
     function getInitialView() {
-        return [view, new MessagesPngInputDelegate(view)];
+        return [view, new UnquestionifyInputDelegate(view)];
     }
 
     function timerCallback() {
