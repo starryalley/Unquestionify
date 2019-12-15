@@ -22,7 +22,7 @@ class UnquestionifyView extends Ui.View {
 
     hidden var isDetailView = false;
     hidden var detailPage = 0;
-    hidden var detailPageCount = 1; // default just 1 page
+    hidden var detailPageCount = 0;
 
     function initialize() {
         View.initialize();
@@ -143,24 +143,38 @@ class UnquestionifyView extends Ui.View {
                 // show next triangle
                 // lower point, upperleft, upperright
                 dc.fillPolygon([[dc.getWidth()/2, dc.getHeight() - 10],
-                                [dc.getWidth()/2 - 5, dc.getHeight() - 15],
-                                [dc.getWidth()/2 + 5, dc.getHeight() - 15]]);
+                                [dc.getWidth()/2 - 7, dc.getHeight() - 18],
+                                [dc.getWidth()/2 + 7, dc.getHeight() - 18]]);
             }
             if (detailPage > 0) {
                 // show prev triangle
                 // upper point, lowerleft, lowerright
                 dc.fillPolygon([[dc.getWidth()/2, 10],
-                                [dc.getWidth()/2 - 5, 15],
-                                [dc.getWidth()/2 + 5, 15]]);
+                                [dc.getWidth()/2 - 7, 18],
+                                [dc.getWidth()/2 + 7, 18]]);
             }
+            // show left arrow
+            // left point, upperright, lowerright
+            dc.fillPolygon([[10, dc.getHeight()/2],
+                            [18, dc.getHeight()/2 - 7],
+                            [18, dc.getHeight()/2 + 7]]);
             Sys.println("Detail Page " + (detailPage + 1) + "/" + detailPageCount);
         // overview: show current/total count
         } else {
-            // show current/total notification count in overview page
             dc.setColor(0xd17d00, Gfx.COLOR_TRANSPARENT);
+            // show app name on top
             dc.drawText(dc.getWidth()/2, 8, Gfx.FONT_XTINY, Ui.loadResource(Rez.Strings.AppName), Gfx.TEXT_JUSTIFY_CENTER);
+            // show current/total notification count in overview page
             dc.drawText(dc.getWidth()/2, dc.getHeight() - 20, Gfx.FONT_XTINY, 
                 (currentNotificationIndex + 1) + "/"+ currentNotifications.size(), Gfx.TEXT_JUSTIFY_CENTER);
+            // if there are more than 1 page of text for this message, show right arrow
+            if (detailPageCount > 0) {
+                dc.setColor(0xd13f00, Gfx.COLOR_TRANSPARENT);
+                // right point, upperleft, lowerleft
+                dc.fillPolygon([[dc.getWidth()-10, dc.getHeight()/2],
+                                [dc.getWidth()-18, dc.getHeight()/2 - 7],
+                                [dc.getWidth()-18, dc.getHeight()/2 + 7]]);
+            }
         }
         dc.setColor(Gfx.COLOR_YELLOW, Gfx.COLOR_TRANSPARENT);
         dc.drawText(dc.getWidth()/2, 25, Gfx.FONT_XTINY, getCurrentNotificationWhen(), Gfx.TEXT_JUSTIFY_CENTER);
@@ -169,17 +183,16 @@ class UnquestionifyView extends Ui.View {
     function showDetail() {
         if (!isDetailView) {
             Sys.println("Show detail view...");
-            // when user wants to view detail, it is likely he/she isn't using
-            // the phone and the message won't be dismissed. Let's now ask phone
-            // to cache/calculate all pages
-            var id = getCurrentNotificationId();
-            if (!id.equals("")) {
-                requestNotificationDetails(id);
+            if (detailPageCount > 0) {
                 isDetailView = true;
+                // reset detail page to first page, and request first page
+	            detailPage = 0;
+	            requestNotificationImageAtPage(getCurrentNotificationId(),
+                    detailPage, method(:onReceiveImage));
+                return true; // mean we are entering detail view
             }
-            return true;
         }
-        return false;
+        return false; // means we are not entering detail view
     }
 
     function showOverview() {
@@ -212,6 +225,7 @@ class UnquestionifyView extends Ui.View {
                 return;
             }
             currentNotificationIndex = (currentNotificationIndex + 1) % currentNotifications.size();
+            detailPageCount = getCurrentNotificationPageCount();
             requestNotificationImage(getCurrentNotificationId());
         }
     }
@@ -230,6 +244,7 @@ class UnquestionifyView extends Ui.View {
                 return;
             }
             currentNotificationIndex = (currentNotificationIndex + currentNotifications.size() - 1) % currentNotifications.size();
+            detailPageCount = getCurrentNotificationPageCount();
             requestNotificationImage(getCurrentNotificationId());
         }
     }
@@ -342,11 +357,13 @@ class UnquestionifyView extends Ui.View {
             if (changed) {
                 if (currentNotifications.size() > 0) {
                     Sys.println("[NEW MESSAGE] Total " + currentNotifications.size() + " notifications");
+                    detailPageCount = getCurrentNotificationPageCount();
                     requestNotificationImage(getCurrentNotificationId());
                 } else {
                     // changed to no notification
                     Sys.println("[ALL CLEARED]");
                     bitmap = null;
+                    detailPageCount = 0; //reset to default value
                     Ui.requestUpdate();
                 }
             }
@@ -426,35 +443,6 @@ class UnquestionifyView extends Ui.View {
             Ui.requestUpdate();
         } else {
             setError("Dismiss Error [" + responseCode + "]", json);
-        }
-    }
-
-    function requestNotificationDetails(id) {
-        errmsg = null;
-        Comm.makeWebRequest(
-            "http://" + ip + ":8080/notifications_details/" + id,
-            {
-                "session" => session,
-            },
-            {
-                :method => Comm.HTTP_REQUEST_METHOD_GET, 
-                //:headers => {"Content-Type" => Comm.REQUEST_CONTENT_TYPE_URL_ENCODED},
-                :responseType => Comm.HTTP_RESPONSE_CONTENT_TYPE_JSON
-            },
-            method(:onReceivedNotificationDetails)
-        );
-    }
-
-    function onReceivedNotificationDetails(responseCode, json) {
-        if (responseCode == 200) {
-            detailPageCount = json["pageCount"];
-            Sys.println("detail page count:" + detailPageCount);
-            // reset page to first
-            detailPage = 0;
-            requestNotificationImageAtPage(getCurrentNotificationId(),
-                detailPage, method(:onReceiveImage));
-        } else {
-            setError("Msg Err [" + responseCode + "]", json);
         }
     }
 
@@ -541,5 +529,12 @@ class UnquestionifyView extends Ui.View {
             return currentNotifications[currentNotificationIndex]["when"];
         }
         return "";
+    }
+
+    function getCurrentNotificationPageCount() {
+        if (currentNotifications.size() > 0 && currentNotificationIndex < currentNotifications.size()) {
+            return currentNotifications[currentNotificationIndex]["pages"];
+        }
+        return 1;
     }
 }
