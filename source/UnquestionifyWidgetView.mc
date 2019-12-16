@@ -8,13 +8,12 @@ class UnquestionifyView extends Ui.View {
     hidden var screenWidth;
     hidden var screenHeight;
     hidden var bitmap; // the notification bitmap fetched from phone
-    hidden var bufferedBitmap; //not used: BufferedBitmap
     hidden var currentNotifications = []; //as array of string
     hidden var currentNotificationIndex = 0;
 
     hidden const ip = "127.0.0.1";
 
-    hidden const appId = "c569ccc1-be51-4860-bbcd-2b45a138d64b";
+    hidden const appId = "c2842d1b-ad5c-47c6-b28f-cc495abd7d32";
     hidden var initialised = false;
     hidden var errmsg;
     hidden var session = "";
@@ -26,11 +25,6 @@ class UnquestionifyView extends Ui.View {
 
     function initialize() {
         View.initialize();
-        bufferedBitmap = new Gfx.BufferedBitmap(
-            {
-                :width=>260,
-                :height=>260,
-            });
 
         // determine screen shape and dimesion
         var shape = Sys.getDeviceSettings().screenShape;
