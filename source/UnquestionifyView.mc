@@ -8,7 +8,6 @@ class UnquestionifyView extends Ui.View {
     hidden var screenWidth;
     hidden var screenHeight;
     hidden var bitmap; // the notification bitmap fetched from phone
-    hidden var bufferedBitmap; //not used: BufferedBitmap
     hidden var currentNotifications = []; //as array of string
     hidden var currentNotificationIndex = 0;
 
@@ -26,11 +25,6 @@ class UnquestionifyView extends Ui.View {
 
     function initialize() {
         View.initialize();
-        bufferedBitmap = new Gfx.BufferedBitmap(
-            {
-                :width=>260,
-                :height=>260,
-            });
 
         // determine screen shape and dimesion
         var shape = Sys.getDeviceSettings().screenShape;
