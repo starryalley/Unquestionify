@@ -28,6 +28,11 @@ class Unquestionify extends App.AppBase {
         return [view, new UnquestionifyInputDelegate(view)];
     }
 
+    (:glance)
+    function getGlanceView() {
+        return [new UnquestionifyWidgetGlanceView()];
+    }
+
     function timerCallback() {
         view.requestNotificationCount();
     }
