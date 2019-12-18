@@ -2,6 +2,7 @@ using Toybox.WatchUi as Ui;
 using Toybox.System as Sys;
 using Toybox.Communications as Comm;
 
+(:glance)
 class UnquestionifyInputDelegate extends Ui.BehaviorDelegate {
     hidden var view;
 
@@ -35,13 +36,13 @@ class UnquestionifyInputDelegate extends Ui.BehaviorDelegate {
         Sys.println("onBack()");
         return view.showOverview();
     }
-    
+
     function onNextPage() {
         Sys.println("onNextPage()");
         view.next();
         return true;
     }
-    
+
     function onPreviousPage() {
         Sys.println("onPreviousPage()");
         view.prev();

@@ -2,19 +2,29 @@ using Toybox.WatchUi as Ui;
 using Toybox.Graphics as Gfx;
 using Toybox.Communications as Comm;
 using Toybox.System as Sys;
+using Toybox.Timer as Timer;
 
+// main app view
+(:glance)
 class UnquestionifyView extends Ui.View {
+    var initialised = false;
+    var shown = false;
+    var currentNotifications = []; //as array of string
+    var summaryBitmap; // not being used now
+
+    // we poll phone app to know if we have new notification (only when app is running obviously)
+    // since it is not reliable for phone to send message to watch in CIQ
+    hidden const POLL_PERIOD = 3 * 1000; //ms
+    hidden var timer;
     hidden var screenShape;
     hidden var screenWidth;
     hidden var screenHeight;
     hidden var bitmap; // the notification bitmap fetched from phone
-    hidden var currentNotifications = []; //as array of string
     hidden var currentNotificationIndex = 0;
 
     hidden const ip = "127.0.0.1";
 
     hidden const appId = "c2842d1b-ad5c-47c6-b28f-cc495abd7d32";
-    hidden var initialised = false;
     hidden var errmsg;
     hidden var session = "";
     hidden var lastTS = 0; //last received message time stamp (from phone)
@@ -25,6 +35,7 @@ class UnquestionifyView extends Ui.View {
 
     function initialize() {
         View.initialize();
+        timer = new Timer.Timer();
 
         // determine screen shape and dimesion
         var shape = Sys.getDeviceSettings().screenShape;
@@ -39,8 +50,22 @@ class UnquestionifyView extends Ui.View {
         screenHeight = Sys.getDeviceSettings().screenHeight;
     }
 
-    function onLayout(dc) {
-        // nothing
+    function onShow() {
+        Sys.println("onShow()");
+        shown = true;
+        if (currentNotifications.size() > 0) {
+            requestNotificationImage(getCurrentNotificationId());
+        }
+        timer.start(method(:onTimer), POLL_PERIOD, true);
+    }
+
+    function onHide() {
+        shown = false;
+        timer.stop();
+    }
+
+    function onTimer() {
+        requestNotificationCount();
     }
 
     // not used
@@ -50,37 +75,6 @@ class UnquestionifyView extends Ui.View {
             :fromRepresentation => StringUtil.REPRESENTATION_STRING_BASE64,
             :toRepresentation => StringUtil.REPRESENTATION_BYTE_ARRAY,
         });
-    }
-
-    // not used. data as ByteArray. This will trigger watchdog so won't use
-    function drawBinaryNotification(dc, data) {
-        var screenWidth = dc.getWidth();
-        var screenHeight = dc.getHeight();
-
-        // set black background
-        dc.setColor(Gfx.COLOR_TRANSPARENT, Gfx.COLOR_BLACK);
-        dc.clear();
-
-        var offsetx = screenWidth/2 - width/2;
-        var offsety = screenHeight/2 - height/2;
-        var k = 0;
-        // foreground: white
-        //var byte = data[0];
-        dc.setColor(Gfx.COLOR_WHITE, Gfx.COLOR_TRANSPARENT);
-        for (var y = 0; y < height; y++) {
-            for (var x = 0; x < width; x++, k++) {
-                //if (k > 0 && k%8 == 0) {
-                    //update current byte
-                    //byte = data[k/8];
-                //}
-                // check if the bit is set
-                if (data[k/8] & (1 << (k%8))) {
-                    // draw this point)
-                    dc.drawPoint(offsetx + x, offsety + y);
-                }
-            }
-        }
-        
     }
 
     function drawNativeNotification(dc, text) {
@@ -230,7 +224,7 @@ class UnquestionifyView extends Ui.View {
             if (detailPage == 0) {
                 Sys.println("No prev detail page: "+ (detailPage + 1) + "/" + detailPageCount);
                 return;
-            } 
+            }
             requestNotificationImageAtPage(getCurrentNotificationId(),
                 detailPage - 1, method(:onReceivePrevDetailImage));
         } else {
@@ -245,24 +239,21 @@ class UnquestionifyView extends Ui.View {
 
     // dimiss current notification on phone
     function dismiss() {
-        if (currentNotifications.size() <= 0) {
-            return;
+        if (currentNotifications.size() > 0) {
+            requestNotificationDismissal(getCurrentNotificationId());
         }
-        requestNotificationDismissal(getCurrentNotificationId());
     }
 
     function dismissAll() {
-        if (currentNotifications.size() <= 0) {
-            return;
+        if (currentNotifications.size() > 0) {
+            requestAllNotificationDismissal();
         }
-        requestAllNotificationDismissal();
     }
 
     // UI update
     function onUpdate(dc) {
         drawBitmapNotification(dc);
     }
-
 
     function setError(errText, json) {
         bitmap = null;
@@ -294,9 +285,7 @@ class UnquestionifyView extends Ui.View {
         if( responseCode == 200 ) {
             session = json["session"];
             Sys.println("=== session starts ===");
-            if (!initialised) {
-                requestNotificationCount();
-            }
+            requestNotificationCount();
             Ui.requestUpdate();
         } else {
             setError("Phone App\nUnreachable", json);
@@ -314,6 +303,7 @@ class UnquestionifyView extends Ui.View {
             requestSession();
             return;
         }
+        Sys.println("Requesting notification count");
         errmsg = null;
         Comm.makeWebRequest(
             "http://" + ip + ":8080/notifications",
@@ -347,23 +337,28 @@ class UnquestionifyView extends Ui.View {
             // replace with the latest array of id
             currentNotifications = json["notification"];
 
+            initialised = true;
+
             // request notification image (will update display)
             if (changed) {
                 if (currentNotifications.size() > 0) {
                     Sys.println("[NEW MESSAGE] Total " + currentNotifications.size() + " notifications");
                     detailPageCount = getCurrentNotificationPageCount();
-                    requestNotificationImage(getCurrentNotificationId());
+                    if (shown) {
+                        requestNotificationImage(getCurrentNotificationId());
+                    }
                 } else {
                     // changed to no notification
                     Sys.println("[ALL CLEARED]");
                     bitmap = null;
                     detailPageCount = 0; //reset to default value
-                    Ui.requestUpdate();
+                    if (shown) {
+                        Ui.requestUpdate();
+                    }
                 }
             }
             // this will only enter when we first communicated successfully with phone app
-            if (!initialised) {
-                initialised = true;
+            if (shown) {
                 Ui.requestUpdate();
             }
         } else {
@@ -442,13 +437,14 @@ class UnquestionifyView extends Ui.View {
 
     // requesting a overview notification
     function requestNotificationImage(id) {
+        bitmap = null;
+        Sys.println("Request overview image");
         requestNotificationImageAtPage(id, -1, method(:onReceiveImage));
     }
 
     // requesting notification as iamge. page -1 means overview
     function requestNotificationImageAtPage(id, page, callback) {
         errmsg = null;
-        bitmap = null;
         var params = {
             "session" => session,
             "page" => page
@@ -484,11 +480,39 @@ class UnquestionifyView extends Ui.View {
             //no content, meaning that no such page (detail view)
             Sys.println("request image failed with no content.");
         } else {
-            //bitmap = null;
-            //errmsg = "Img Error [" + responseCode + "]";
             Sys.println("request image failed. Response code:" + responseCode);
-            //Ui.requestUpdate();
-         }
+        }
+    }
+
+    // requesting notification summary with width/height (for glance view)
+    function requestNotificationSummaryImage(width, height, textSize) {
+        errmsg = null;
+        var params = {
+            "session" => session,
+            "width" => width,
+            "height" => height,
+            "textSize" => textSize
+        };
+        Comm.makeImageRequest(
+            "http://" + ip + ":8080/notification_summary",
+            params,
+            {
+                :palette=>[
+                    0xFF000000, //black
+                    0xFFFFFFFF //AARRGGBB - white
+                ]
+            },
+            method(:onReceiveSummaryImage)
+        );
+    }
+
+    function onReceiveSummaryImage(responseCode, data) {
+        if (responseCode == 200) {
+            Sys.println("Summary Image received successfully");
+            summaryBitmap = data;
+        } else {
+            summaryBitmap = null;
+        }
     }
 
     function onReceivePrevDetailImage(responseCode, data) {
