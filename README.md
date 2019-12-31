@@ -2,6 +2,9 @@
 
 Unquestionify is a [Garmin Connect IQ](https://apps.garmin.com/en-US/) watch widget, which displays your phone's notifications (selectable from which apps) as a 1-bit monochrome image.
 
+[View on Garmin Connect IQ Store](https://apps.garmin.com/en-US/apps/d33523a2-3be6-4689-8f40-af7912063446)
+
+
 This enables the user to read notifications in any language which is not possible on some garmin Connect IQ devices. For example, Chinese text is display as diamond question marks on Fenix 6 sold in countries other than Taiwan and China.
 
 This project is the watch widget.
