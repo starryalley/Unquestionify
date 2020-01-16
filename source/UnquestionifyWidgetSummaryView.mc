@@ -17,6 +17,7 @@ class UnquestionifyWidgetSummaryView extends Ui.View {
 
     function onShow() {
         // update UI every 3 seconds so we can refresh current notification count
+        Sys.println("Widget Summary onShow()");
         Ui.requestUpdate();
         timer.start(method(:onTimer), 1000*3, true);
     }

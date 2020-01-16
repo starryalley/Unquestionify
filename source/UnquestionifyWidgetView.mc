@@ -51,7 +51,7 @@ class UnquestionifyView extends Ui.View {
     }
 
     function onShow() {
-        Sys.println("onShow()");
+        Sys.println("Mainview onShow()");
         shown = true;
         if (currentNotifications.size() > 0) {
             requestNotificationImage(getCurrentNotificationId());
@@ -341,7 +341,7 @@ class UnquestionifyView extends Ui.View {
 
             // request notification image (will update display)
             if (changed) {
-                if (currentNotifications.size() > 0) {
+                if (currentNotifications != null && currentNotifications.size() > 0) {
                     Sys.println("[NEW MESSAGE] Total " + currentNotifications.size() + " notifications");
                     detailPageCount = getCurrentNotificationPageCount();
                     if (shown) {
