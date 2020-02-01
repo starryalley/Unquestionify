@@ -53,7 +53,8 @@ class UnquestionifyView extends Ui.View {
     function onShow() {
         Sys.println("Mainview onShow()");
         shown = true;
-        if (currentNotifications.size() > 0) {
+        // when we are in overview page and we have notification, let's show the message
+        if (!isDetailView && currentNotifications.size() > 0) {
             requestNotificationImage(getCurrentNotificationId());
         }
         timer.start(method(:onTimer), POLL_PERIOD, true);
@@ -345,7 +346,16 @@ class UnquestionifyView extends Ui.View {
                     Sys.println("[NEW MESSAGE] Total " + currentNotifications.size() + " notifications");
                     detailPageCount = getCurrentNotificationPageCount();
                     if (shown) {
-                        requestNotificationImage(getCurrentNotificationId());
+                        // this can only happen in overview page (isDetailView==false)
+                        /*
+                        if (isDetailView) {
+                            // detail view
+                            requestNotificationImageAtPage(getCurrentNotificationId(),
+                                detailPage, method(:onReceiveImage));
+                        } else {*/
+                            // overview
+                            requestNotificationImage(getCurrentNotificationId());
+                        //}
                     }
                 } else {
                     // changed to no notification
