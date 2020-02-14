@@ -33,6 +33,9 @@ class UnquestionifyView extends Ui.View {
     hidden var detailPage = 0;
     hidden var detailPageCount = 0;
 
+    hidden var fontHeight = 10;
+    hidden var linePos = 40;
+
     function initialize() {
         View.initialize();
         timer = new Timer.Timer();
@@ -48,6 +51,11 @@ class UnquestionifyView extends Ui.View {
         }
         screenWidth = Sys.getDeviceSettings().screenWidth;
         screenHeight = Sys.getDeviceSettings().screenHeight;
+    }
+
+    function onLayout(dc) {
+        fontHeight = dc.getFontHeight(Gfx.FONT_XTINY);
+        linePos = screenWidth/2 - Math.sqrt((screenWidth/2)*(screenWidth/2)/2) - screenHeight/30;
     }
 
     function onShow() {
@@ -120,14 +128,22 @@ class UnquestionifyView extends Ui.View {
         dc.drawBitmap(x, y, bitmap);
         Sys.println("Drawing bitmap [" + bitmap.getWidth() + "x" + bitmap.getHeight() + "] at (" + x + "," + y + ")");
 
-        // draw top bottom line
+        // draw top/bottom line
         dc.setColor(Gfx.COLOR_DK_GRAY, Gfx.COLOR_TRANSPARENT);
-        dc.drawLine(0, 25, screenWidth, 25);
-        dc.drawLine(0, dc.getHeight() - 25, screenWidth, dc.getHeight() - 25);
+        dc.drawLine(0, linePos, screenWidth, linePos);
+        dc.drawLine(0, dc.getHeight() - linePos, screenWidth, dc.getHeight() - linePos);
 
         // detail view: show next/prev triangle
         if (isDetailView) {
-            dc.setColor(0xd13f00, Gfx.COLOR_TRANSPARENT);
+            // show message time (only on page 1 and last page)
+            if (detailPage == 0) {
+                dc.setColor(0xbdffc9, Gfx.COLOR_TRANSPARENT);
+                dc.drawText(dc.getWidth()/2, linePos - fontHeight, Gfx.FONT_XTINY, getCurrentNotificationWhen(), Gfx.TEXT_JUSTIFY_CENTER);
+            } else if (detailPage == detailPageCount - 1) {
+                dc.setColor(0xbdffc9, Gfx.COLOR_TRANSPARENT);
+                dc.drawText(dc.getWidth()/2, dc.getHeight() - linePos, Gfx.FONT_XTINY, getCurrentNotificationWhen(), Gfx.TEXT_JUSTIFY_CENTER);
+            }
+            dc.setColor(0xffcb2e, Gfx.COLOR_TRANSPARENT);
             if (detailPage < detailPageCount - 1) {
                 // show next triangle
                 // lower point, upperleft, upperright
@@ -150,23 +166,24 @@ class UnquestionifyView extends Ui.View {
             Sys.println("Detail Page " + (detailPage + 1) + "/" + detailPageCount);
         // overview: show current/total count
         } else {
-            dc.setColor(0xd17d00, Gfx.COLOR_TRANSPARENT);
+            // show message time
+            dc.setColor(0xbdffc9, Gfx.COLOR_TRANSPARENT);
+            dc.drawText(dc.getWidth()/2, dc.getHeight() - linePos - fontHeight, Gfx.FONT_XTINY, getCurrentNotificationWhen(), Gfx.TEXT_JUSTIFY_CENTER);
             // show app name on top
-            dc.drawText(dc.getWidth()/2, 8, Gfx.FONT_XTINY, Ui.loadResource(Rez.Strings.AppName), Gfx.TEXT_JUSTIFY_CENTER);
+            dc.setColor(0xffecb8, Gfx.COLOR_TRANSPARENT);
+            dc.drawText(dc.getWidth()/2, linePos - fontHeight, Gfx.FONT_XTINY, Ui.loadResource(Rez.Strings.AppName), Gfx.TEXT_JUSTIFY_CENTER);
             // show current/total notification count in overview page
-            dc.drawText(dc.getWidth()/2, dc.getHeight() - 20, Gfx.FONT_XTINY, 
+            dc.drawText(dc.getWidth()/2, dc.getHeight() - linePos, Gfx.FONT_XTINY,
                 (currentNotificationIndex + 1) + "/"+ currentNotifications.size(), Gfx.TEXT_JUSTIFY_CENTER);
             // if there are more than 1 page of text for this message, show right arrow
             if (detailPageCount > 0) {
-                dc.setColor(0xd13f00, Gfx.COLOR_TRANSPARENT);
+                dc.setColor(0xffcb2e, Gfx.COLOR_TRANSPARENT);
                 // right point, upperleft, lowerleft
                 dc.fillPolygon([[dc.getWidth()-10, dc.getHeight()/2],
                                 [dc.getWidth()-18, dc.getHeight()/2 - 7],
                                 [dc.getWidth()-18, dc.getHeight()/2 + 7]]);
             }
         }
-        dc.setColor(Gfx.COLOR_YELLOW, Gfx.COLOR_TRANSPARENT);
-        dc.drawText(dc.getWidth()/2, 25, Gfx.FONT_XTINY, getCurrentNotificationWhen(), Gfx.TEXT_JUSTIFY_CENTER);
     }
 
     function showDetail() {
@@ -175,8 +192,8 @@ class UnquestionifyView extends Ui.View {
             if (detailPageCount > 0) {
                 isDetailView = true;
                 // reset detail page to first page, and request first page
-	            detailPage = 0;
-	            requestNotificationImageAtPage(getCurrentNotificationId(),
+                detailPage = 0;
+                requestNotificationImageAtPage(getCurrentNotificationId(),
                     detailPage, method(:onReceiveImage));
                 return true; // mean we are entering detail view
             }
@@ -265,6 +282,7 @@ class UnquestionifyView extends Ui.View {
     }
 
     function requestSession() {
+        System.println("Request session:" + screenWidth + "x" + screenHeight);
         errmsg = null;
         Comm.makeWebRequest(
             "http://" + ip + ":8080/request_session",
@@ -275,7 +293,7 @@ class UnquestionifyView extends Ui.View {
                 "shape" => screenShape,
             },
             {
-                :method => Comm.HTTP_REQUEST_METHOD_GET, 
+                :method => Comm.HTTP_REQUEST_METHOD_GET,
                 :responseType => Comm.HTTP_RESPONSE_CONTENT_TYPE_JSON
             },
             method(:onReceivedSession)
@@ -283,7 +301,7 @@ class UnquestionifyView extends Ui.View {
     }
 
     function onReceivedSession(responseCode, json) {
-        if( responseCode == 200 ) {
+        if( responseCode == 200 && json.hasKey("session")) {
             session = json["session"];
             Sys.println("=== session starts ===");
             requestNotificationCount();
@@ -291,7 +309,13 @@ class UnquestionifyView extends Ui.View {
         } else {
             setError("Phone App\nUnreachable", json);
             Ui.requestUpdate();
-            Sys.println("request session failed. Response code:" + responseCode);
+            if (responseCode == 200) {
+                setError("Unexpected Data\nReceived", json);
+                Sys.println("request session returned malformed data");
+            } else {
+                setError("Phone App\nUnreachable", json);
+                Sys.println("request session failed. Response code:" + responseCode);
+            }
         }
     }
 
@@ -312,7 +336,7 @@ class UnquestionifyView extends Ui.View {
                 "session" => session,
             },
             {
-                :method => Comm.HTTP_REQUEST_METHOD_GET, 
+                :method => Comm.HTTP_REQUEST_METHOD_GET,
                 :responseType => Comm.HTTP_RESPONSE_CONTENT_TYPE_JSON
             },
             method(:onReceivedNotificationCount)
@@ -387,7 +411,7 @@ class UnquestionifyView extends Ui.View {
                 "session" => session,
             },
             {
-                :method => Comm.HTTP_REQUEST_METHOD_DELETE, 
+                :method => Comm.HTTP_REQUEST_METHOD_DELETE,
                 :responseType => Comm.HTTP_RESPONSE_CONTENT_TYPE_JSON
             },
             method(:onReceivedDismissal)
@@ -403,7 +427,7 @@ class UnquestionifyView extends Ui.View {
                 "session" => session,
             },
             {
-                :method => Comm.HTTP_REQUEST_METHOD_DELETE, 
+                :method => Comm.HTTP_REQUEST_METHOD_DELETE,
                 :responseType => Comm.HTTP_RESPONSE_CONTENT_TYPE_JSON
             },
             method(:onReceivedDismissalAll)
@@ -472,7 +496,7 @@ class UnquestionifyView extends Ui.View {
             },
             callback
         );
-        
+
     }
 
     // callback receiving a bitmap and saving to 'bitmap'

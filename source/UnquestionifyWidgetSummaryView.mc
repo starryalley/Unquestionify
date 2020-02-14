@@ -39,14 +39,14 @@ class UnquestionifyWidgetSummaryView extends Ui.View {
         if (!started) {
             text = "Loading...";
         } else if (mainview.initialised) {
-	        if (mainview.currentNotifications.size() == 0) {
-	            text = "Unquestionify\nNo message";
-	        } else {
-	            text = "Unquestionify\n" + mainview.currentNotifications.size() + " messages";
-	        }
-	    } else {
-	       text = "PhoneApp Unreachable";
-	    }
+            if (mainview.currentNotifications.size() == 0) {
+                text = "Unquestionify\nNo message";
+            } else {
+                text = "Unquestionify\n" + mainview.currentNotifications.size() + " messages";
+            }
+        } else {
+           text = "PhoneApp Unreachable";
+        }
         dc.drawText(dc.getWidth()/2, dc.getHeight()/2, Gfx.FONT_SMALL, text,
             Gfx.TEXT_JUSTIFY_CENTER | Gfx.TEXT_JUSTIFY_VCENTER);
     }
