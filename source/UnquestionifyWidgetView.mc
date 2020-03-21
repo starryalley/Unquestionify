@@ -217,23 +217,34 @@ class UnquestionifyView extends Ui.View {
         return false;
     }
 
-    // show the next notification
+    // for VA workaround: directly go to the next message overview page
+    function showNextOverview() {
+        if (isDetailView) {
+            isDetailView = false;
+            currentNotificationIndex = (currentNotificationIndex + 1) % currentNotifications.size();
+            detailPageCount = getCurrentNotificationPageCount();
+            requestNotificationImage(getCurrentNotificationId());
+        }
+    }
+
+    // show the next notification. Returns false when there is no next page
     function next() {
         if (isDetailView) {
             if (detailPage + 1 == detailPageCount) {
                 Sys.println("No next detail page: "+ (detailPage + 1) + "/" + detailPageCount);
-                return;
+                return false;
             }
             requestNotificationImageAtPage(getCurrentNotificationId(),
                 detailPage + 1, method(:onReceiveNextDetailImage));
         } else {
             if (currentNotifications.size() <= 1) {
-                return;
+                return false;
             }
             currentNotificationIndex = (currentNotificationIndex + 1) % currentNotifications.size();
             detailPageCount = getCurrentNotificationPageCount();
             requestNotificationImage(getCurrentNotificationId());
         }
+        return true;
     }
 
     // show the previous notification
