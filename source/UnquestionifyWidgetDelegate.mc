@@ -5,16 +5,10 @@ using Toybox.Communications as Comm;
 (:glance)
 class UnquestionifyInputDelegate extends Ui.BehaviorDelegate {
     hidden var view;
-    hidden var isVA4 = false;
 
     function initialize(v) {
         Ui.BehaviorDelegate.initialize();
         view = v;
-        var dev = Sys.getDeviceSettings();
-        if (dev.partNumber.equals("006-B3224-00") || dev.partNumber.equals("006-B3225-00")) {
-            isVA4 = true;
-            Sys.println("using VA4");
-        }
     }
 
     function showDismissMenu() {
@@ -33,14 +27,7 @@ class UnquestionifyInputDelegate extends Ui.BehaviorDelegate {
     function onSelect() {
         Sys.println("onSelect()");
         if (!view.showDetail()) {
-            if (!isVA4) {
-                showDismissMenu();
-            } else {
-                // workaround for VA4 FW bug: there is no onNextPage() and onPreviousPage() support
-                if (!view.next()) {
-                    view.showNextOverview();
-                }
-            }
+            showDismissMenu();
         }
         return true;
     }
