@@ -1,10 +1,16 @@
+
+# Important Update
+
+As of now (March 2021) Garmin Connect Mobile (GCM) version 4.4 has broken the functionality of this widget. See bug report [here](https://forums.garmin.com/developer/connect-iq/i/bug-reports/connect-mobile-4-40-makeimagerequest-localhost-error?CommentSortBy=CreatedDate&CommentSortOrder=Descending).
+
+Currently there is no workaround available and Garmin hasn't made a decision yet if they gonna fix this. If they won't, unfortunately this project will be dead.
+
+
 # Unquestionify
 
 Unquestionify is a [Garmin Connect IQ](https://apps.garmin.com/en-US/) watch widget, which displays your phone's notifications (selectable from which apps) as a 1-bit monochrome image.
 
-[<img src="https://developer.garmin.com/img/connect-iq/brand/available-badge.svg"
-      alt="Available on Garmin Connect IQ"
-      height="90">](https://apps.garmin.com/en-US/apps/d33523a2-3be6-4689-8f40-af7912063446)
+[Available on Garmin Connect IQ](https://apps.garmin.com/en-US/apps/d33523a2-3be6-4689-8f40-af7912063446)
 
 
 This enables the user to read notifications in any language which is not possible on some garmin Connect IQ devices. For example, Chinese text is display as diamond question marks on Fenix 6 sold in countries other than Taiwan and China.
