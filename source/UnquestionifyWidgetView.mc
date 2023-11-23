@@ -23,10 +23,12 @@ class UnquestionifyView extends Ui.View {
     hidden var currentNotificationIndex = 0;
 
     hidden const ip = "127.0.0.1";
+    hidden const imageServer = "https://fill_in_the_relay_server_domain_here";
 
     hidden const appId = "c2842d1b-ad5c-47c6-b28f-cc495abd7d32";
     hidden var errmsg;
     hidden var session = "";
+    hidden var relaySession = "";
     hidden var lastTS = 0; //last received message time stamp (from phone)
 
     hidden var isDetailView = false;
@@ -282,7 +284,7 @@ class UnquestionifyView extends Ui.View {
     }
 
     function requestSession() {
-        System.println("Request session:" + screenWidth + "x" + screenHeight);
+        System.println("Request session:" + screenWidth + "x" + screenHeight + ". IP:" + ip);
         errmsg = null;
         Comm.makeWebRequest(
             "http://" + ip + ":8080/request_session",
@@ -300,9 +302,37 @@ class UnquestionifyView extends Ui.View {
         );
     }
 
+    function setGlanceDimension(width, height, textHeight) {
+        System.println("Set Glance Dimension:" + width + "x" + height + ", text height:" + textHeight);
+        errmsg = null;
+        Comm.makeWebRequest(
+            "http://" + ip + ":8080/set_glance_dimension",
+            {
+                "session" => session,
+                "width" => width,
+                "height" => height,
+                "textHeight" => textHeight,
+            },
+            {
+                :method => Comm.HTTP_REQUEST_METHOD_GET,
+                :responseType => Comm.HTTP_RESPONSE_CONTENT_TYPE_JSON
+            },
+            method(:onReceiveGlanceDone)
+        );
+    }
+
+    function onReceiveGlanceDone(responseCode, json) {
+        if( responseCode == 200) {
+            Sys.println("Glance dimension set!");
+        } else {
+            Sys.println("Unable to set glance dimension:" + responseCode);
+        }
+    }
+
     function onReceivedSession(responseCode, json) {
-        if( responseCode == 200 && json.hasKey("session")) {
+        if( responseCode == 200 && json.hasKey("session") && json.hasKey("relay_session")) {
             session = json["session"];
+            relaySession = json["relay_session"];
             Sys.println("=== session starts ===");
             requestNotificationCount();
             Ui.requestUpdate();
@@ -476,23 +506,24 @@ class UnquestionifyView extends Ui.View {
         requestNotificationImageAtPage(id, -1, method(:onReceiveImage));
     }
 
-    // requesting notification as iamge. page -1 means overview
+    // requesting notification as image. page -1 means overview
     function requestNotificationImageAtPage(id, page, callback) {
         errmsg = null;
         var params = {
-            "session" => session,
-            "page" => page
+            "session" => relaySession
         };
+        //Sys.println("makeImageRequest => " + imageServer + "/notifications/" + id + "/" + page + "?session=" + relaySession);
         Comm.makeImageRequest(
-            "http://" + ip + ":8080/notifications/" + id,
+            imageServer + "/notifications/" + id + "/" + page,
             params,
             {
                 :palette=>[
                     0xFF000000, //black
                     0xFFFFFFFF //AARRGGBB - white
                 ],
-                :maxWidth=>screenWidth,
-                :maxHeight=>screenHeight
+                // the below 2 lines will make the image the size of maxWidth * maxHeight, different from pre-GCM 4.40
+                // :maxWidth=>screenWidth,
+                // :maxHeight=>screenHeight
             },
             callback
         );
@@ -519,16 +550,14 @@ class UnquestionifyView extends Ui.View {
     }
 
     // requesting notification summary with width/height (for glance view)
-    function requestNotificationSummaryImage(width, height, textSize) {
+    function requestNotificationSummaryImage() {
         errmsg = null;
         var params = {
-            "session" => session,
-            "width" => width,
-            "height" => height,
-            "textSize" => textSize
+            "session" => relaySession
         };
+        //Sys.println("makeImageRequest => " + imageServer + "/notifications/summary/0");
         Comm.makeImageRequest(
-            "http://" + ip + ":8080/notification_summary",
+            imageServer + "/notifications/summary/0",
             params,
             {
                 :palette=>[
@@ -545,6 +574,7 @@ class UnquestionifyView extends Ui.View {
             Sys.println("Summary Image received successfully");
             summaryBitmap = data;
         } else {
+            Sys.println("Summary Image request failed:" + responseCode + ", data:" + data);
             summaryBitmap = null;
         }
     }

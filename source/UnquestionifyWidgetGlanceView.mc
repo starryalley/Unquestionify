@@ -33,7 +33,8 @@ class UnquestionifyWidgetGlanceView extends Ui.GlanceView {
         started = true;
         // when session is acquired and we haven't requested summary image
         if (mainview.initialised && !requested) {
-            mainview.requestNotificationSummaryImage(width, height - textHeight, textHeight - 2);
+            mainview.requestNotificationSummaryImage();
+            mainview.setGlanceDimension(width, height - textHeight, textHeight - 2);
             requested = true;
         }
         Ui.requestUpdate();
