@@ -3,6 +3,9 @@ using Toybox.Graphics as Gfx;
 using Toybox.Communications as Comm;
 using Toybox.System as Sys;
 using Toybox.Timer as Timer;
+using Toybox.Lang;
+using Toybox.Graphics;
+using Toybox.WatchUi;
 
 // main app view
 (:glance)
@@ -321,7 +324,7 @@ class UnquestionifyView extends Ui.View {
         );
     }
 
-    function onReceiveGlanceDone(responseCode, json) {
+    function onReceiveGlanceDone(responseCode as Lang.Number, json as Lang.Dictionary or Lang.String or Null) as Void {
         if( responseCode == 200) {
             Sys.println("Glance dimension set!");
         } else {
@@ -329,7 +332,7 @@ class UnquestionifyView extends Ui.View {
         }
     }
 
-    function onReceivedSession(responseCode, json) {
+    function onReceivedSession(responseCode as Lang.Number, json as Lang.Dictionary or Lang.String or Null) as Void {
         if( responseCode == 200 && json.hasKey("session") && json.hasKey("relay_session")) {
             session = json["session"];
             relaySession = json["relay_session"];
@@ -373,7 +376,8 @@ class UnquestionifyView extends Ui.View {
         );
     }
 
-    function onReceivedNotificationCount(responseCode, json) {
+
+    function onReceivedNotificationCount(responseCode as Lang.Number, json as Null or Lang.Dictionary or Lang.String) as Void {
         if( responseCode == 200 ) {
             var oldCount = currentNotifications.size();
             var oldCurrentId = "";
@@ -465,7 +469,7 @@ class UnquestionifyView extends Ui.View {
     }
 
     // callabck for dismissing a notification
-    function onReceivedDismissal(responseCode, json) {
+    function onReceivedDismissal(responseCode as Lang.Number, json as Null or Lang.Dictionary or Lang.String) as Void {
         if (responseCode == 200) {
             Sys.println("notification dismissed");
 
@@ -486,7 +490,7 @@ class UnquestionifyView extends Ui.View {
     }
 
     // callabck for dismissing all notification
-    function onReceivedDismissalAll(responseCode, json) {
+    function onReceivedDismissalAll(responseCode as Lang.Number, json as Null or Lang.Dictionary or Lang.String) as Void {
         if (responseCode == 200) {
             isDetailView = false;
             errmsg = null;
@@ -569,7 +573,7 @@ class UnquestionifyView extends Ui.View {
         );
     }
 
-    function onReceiveSummaryImage(responseCode, data) {
+    function onReceiveSummaryImage(responseCode as Lang.Number, data as Null or Graphics.BitmapReference or WatchUi.BitmapResource) as Void {
         if (responseCode == 200) {
             Sys.println("Summary Image received successfully");
             summaryBitmap = data;
@@ -579,7 +583,7 @@ class UnquestionifyView extends Ui.View {
         }
     }
 
-    function onReceivePrevDetailImage(responseCode, data) {
+    function onReceivePrevDetailImage(responseCode as Lang.Number, data as Null or Graphics.BitmapReference or WatchUi.BitmapResource) as Void {
         if (responseCode == 200) {
             detailPage -= 1;
             Sys.println("previous page " + detailPage + " shown");
@@ -589,7 +593,7 @@ class UnquestionifyView extends Ui.View {
         onReceiveImage(responseCode, data);
     }
 
-    function onReceiveNextDetailImage(responseCode, data) {
+    function onReceiveNextDetailImage(responseCode as Lang.Number, data as Null or Graphics.BitmapReference or WatchUi.BitmapResource) as Void {
         if (responseCode == 200) {
             detailPage += 1;
             Sys.println("next page " + detailPage + " shown");
